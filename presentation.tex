@@ -8,28 +8,43 @@
 % Professional academic theme
 \usetheme{Madrid}
 \usecolortheme{seahorse}
+\setbeamertemplate{blocks}[default]
 
-% Custom colors (professional blue-gray palette)
-\definecolor{primaryblue}{RGB}{41, 65, 114}
-\definecolor{secondaryblue}{RGB}{70, 130, 180}
+% --- CUSTOM COLORS ---
+\definecolor{primaryblue}{RGB}{41, 65, 114}   % Dark Blue (Text, Titles)
+\definecolor{secondaryblue}{RGB}{70, 130, 180} % Steel Blue
+\definecolor{lightblue}{RGB}{150, 185, 220}   % Light Blue for block headers - MUCH LIGHTER
 \definecolor{accentgray}{RGB}{100, 100, 100}
-\definecolor{lightbg}{RGB}{245, 247, 250}
+\definecolor{lightbg}{RGB}{245, 247, 250}     % Very light gray background
 
-\setbeamercolor{palette primary}{bg=primaryblue, fg=white}
-\setbeamercolor{palette secondary}{bg=secondaryblue, fg=white}
-\setbeamercolor{title}{fg=primaryblue}
+% --- COLOR SETTINGS ---
+% Set the Main Title (Slide 1) to Dark Blue on Light Background
+\setbeamercolor{title}{fg=primaryblue, bg=lightbg}
+\setbeamercolor{subtitle}{fg=secondaryblue, bg=lightbg}
+
+% Set Frame Titles (Slide headings)
 \setbeamercolor{frametitle}{fg=primaryblue, bg=lightbg}
-\setbeamercolor{block title}{bg=primaryblue, fg=white}
-\setbeamercolor{block body}{bg=lightbg}
 
-% Packages
+% --- FIX FOR BLACK BLOCK HEADERS ---
+% Using a much lighter blue so it doesn't appear black
+\setbeamercolor{block title}{bg=lightblue, fg=primaryblue} 
+\setbeamercolor{block body}{bg=white, fg=black}
+
+% Make the itemize bullets blue
+\setbeamercolor{structure}{fg=primaryblue} 
+
+%Packages
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{tikz}
 
-% Remove navigation symbols
+% --- LAYOUT FIXES ---
+% Remove navigation symbols (bottom right)
 \setbeamertemplate{navigation symbols}{}
+
+% REMOVE THE TOP HEADER BAR
+\setbeamertemplate{headline}{}
 
 % Title information
 \title[RL Medical Diagnosis]{Reinforcement Learning for Medical Diagnosis}
@@ -106,6 +121,7 @@
 \begin{frame}{8 Diseases and Their Symptoms}
     \begin{table}
         \centering
+        \small 
         \begin{tabular}{lcccccc}
             \toprule
             \textbf{Disease} & \textbf{Fever} & \textbf{Cough} & \textbf{Fatigue} & \textbf{Breath} & \textbf{Headache} \\
@@ -164,10 +180,11 @@
     
     \vspace{0.3cm}
     
-    \textbf{13 Total Actions:}
-    
+    \textbf{13 Total Actions:}\par\vspace{0.3cm}
+
     \begin{columns}
-        \column{0.5\textwidth}
+
+        \column{0.3\textwidth}
         \textbf{5 Ask Actions:}
         \begin{itemize}
             \item Ask about Fever
@@ -186,6 +203,94 @@
             \item ... (one for each disease)
         \end{itemize}
     \end{columns}
+\end{frame}
+
+\begin{frame}{Transition Probabilities - How They Work}
+    \begin{block}{The Challenge}
+        We don't know the true disease! So how do we calculate $P(s'|s, a)$?
+    \end{block}
+    
+    \vspace{0.3cm}
+    
+    \textbf{Our Solution: Belief-Based Transitions}
+    
+    \vspace{0.3cm}
+    
+    \begin{enumerate}
+        \item \textbf{Compatible Diseases:} Find all diseases matching known symptoms
+        
+        \item \textbf{Uniform Belief:} Assume each compatible disease is equally likely
+        \[P(\text{disease } d) = \frac{1}{\text{\# compatible diseases}}\]
+        
+        \item \textbf{Weighted Sum:} Average over all compatible diseases
+        \[P(s'|s, a) = \sum_{d \in \text{Compatible}} P(d) \times \mathbb{I}[s' = T(s, a, d)]\]
+    \end{enumerate}
+    
+    \vspace{0.3cm}
+    
+    \textbf{Key Idea:} Transition depends on our \emph{belief} about what disease the patient has!
+\end{frame}
+
+\begin{frame}{Example: Computing Transition Probabilities (Part 1)}
+    \textbf{Scenario:} Current state $s = 0$ (no symptoms known)\\
+    \textbf{Action:} Ask about Fever
+    
+    \vspace{0.5cm}
+    
+    \textbf{Step 1: Find Compatible Diseases}
+    
+    \vspace{0.2cm}
+    
+    Since we know nothing yet, \emph{all 8 diseases} are compatible with current state:
+    \begin{itemize}
+        \item Flu, Strep, Pneumonia, Bronchitis (have Fever)
+        \item Cold, Allergy, Asthma, Migraine (no Fever)
+    \end{itemize}
+    
+    \vspace{0.5cm}
+    
+    \textbf{Step 2: Calculate Belief Distribution}
+    
+    \vspace{0.2cm}
+    
+    Using uniform belief over compatible diseases:
+    \[P(\text{each disease}) = \frac{1}{8} = 0.125\]
+    
+    \vspace{0.3cm}
+    
+    \textbf{Next:} How does this lead to transition probabilities?
+\end{frame}
+
+\begin{frame}{Example: Computing Transition Probabilities (Part 2)}
+    \textbf{Step 3: Determine Possible Next States}
+    
+    \vspace{0.2cm}
+    
+    When we ask about Fever, two outcomes are possible:
+    \begin{itemize}
+        \item Patient has Fever → Next state: Fever=Present
+        \item Patient doesn't have Fever → Next state: Fever=Absent
+    \end{itemize}
+    
+    \vspace{0.3cm}
+    
+    \textbf{Step 4: Compute Transition Probabilities}
+    
+    \vspace{0.2cm}
+    
+    Count which diseases lead to each outcome:
+    \begin{itemize}
+        \item 4 diseases have Fever: Flu, Strep, Pneumonia, Bronchitis
+        \item 4 diseases don't: Cold, Allergy, Asthma, Migraine
+    \end{itemize}
+    
+    \vspace{0.2cm}
+    
+    \textbf{Final Result:}
+    \vspace{-0.1cm}
+    \[P(s' = \text{Fever Present} \mid s=0, a) = \frac{4}{8} = 0.5\]
+    \vspace{-0.3cm}
+    \[P(s' = \text{Fever Absent} \mid s=0, a) = \frac{4}{8} = 0.5\]
 \end{frame}
 
 \begin{frame}{Rewards}
@@ -316,7 +421,7 @@
         \column{0.5\textwidth}
         % Placeholder for grid image
         \centering
-        \includegraphics[width=0.9\textwidth]{state_grid}
+        \includegraphics[width=0.9\textwidth, height=0.6\textheight, keepaspectratio]{state_grid}
         
         \column{0.5\textwidth}
         \textbf{What is This Grid?}
@@ -343,7 +448,7 @@
         \column{0.5\textwidth}
         % Placeholder for dashboard image
         \centering
-        \includegraphics[width=0.9\textwidth]{dashboard}
+        \includegraphics[width=0.9\textwidth, height=0.6\textheight, keepaspectratio]{dashboard}
         
         \column{0.5\textwidth}
         \textbf{Features:}
