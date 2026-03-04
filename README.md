@@ -1,8 +1,12 @@
 # RL Medical Diagnosis System
 
+**Live Demo:** [ai-rl-doctor.streamlit.app](https://ai-rl-doctor.streamlit.app)
+
 ## About This Project
 
-I built this Reinforcement Learning project to demonstrate how an AI agent can learn to diagnose diseases by intelligently asking about symptoms. The agent uses **Policy Iteration** and **Value Iteration** algorithms to find the optimal strategy for diagnosis.
+I built this Reinforcement Learning project to demonstrate how an AI agent can learn to diagnose diseases by intelligently asking about symptoms. The project is divided into two parts:
+1. **Assignment 1:** Dynamic Programming (Policy Iteration & Value Iteration) using known transition probabilities.
+2. **Assignment 2:** Model-Free Reinforcement Learning (GLIE Monte Carlo, SARSA, SARSA(λ)) learning directly from experience without transition probabilities.
 
 ## What I Implemented
 
@@ -12,7 +16,7 @@ I created a medical diagnosis system where an AI doctor:
 3. Learns which questions to ask to efficiently identify 8 different diseases
 4. Makes a diagnosis when confident
 
-### The 8 Diseases I Modeled
+### The 8 Diseases Modeled
 
 | Disease | Symptoms Present |
 |---------|-----------------|
@@ -25,7 +29,7 @@ I created a medical diagnosis system where an AI doctor:
 | Asthma | Fatigue, Breath |
 | Migraine | Headache |
 
-## How I Designed the MDP
+## MDP Design
 
 ### State Space (243 states)
 I used a base-3 representation where each of the 5 symptoms can be:
@@ -33,63 +37,56 @@ I used a base-3 representation where each of the 5 symptoms can be:
 - **Absent (1)**: Patient doesn't have it
 - **Present (2)**: Patient has it
 
-So total states = 3^5 = 243 knowledge states + 1 terminal = 244 states.
+Total states = 3^5 = 243 knowledge states + 1 terminal = 244 states.
 
 ### Action Space (13 actions)
 - **5 Ask actions**: Ask about each symptom
 - **8 Diagnose actions**: Diagnose each disease
 
 ### Reward Structure
-| Action | Reward |
-|--------|--------|
-| Ask symptom | -0.1 (small cost for asking) |
-| Correct diagnosis | +10.0 |
-| Wrong diagnosis | -5.0 |
+- **Ask symptom**: -0.1 (small cost for asking)
+- **Correct diagnosis**: +10.0
+- **Wrong diagnosis**: -5.0
 
-### Discount Factor
-I used γ = 0.9 to balance immediate vs future rewards.
+## The Algorithms Investigated
 
-## The Algorithms I Used
+### Part 1: Dynamic Programming (Model-Based)
+Requires full knowledge of transition probabilities $P(s'|s,a)$.
+- **Policy Iteration**: Converges in 4-5 iterations
+- **Value Iteration**: Converges in 15-20 iterations
 
-### Policy Iteration
-1. Start with a random policy
-2. **Policy Evaluation**: Calculate V(s) for all states under current policy
-3. **Policy Improvement**: Update policy to be greedy with respect to V
-4. Repeat until policy converges
+### Part 2: Model-Free RL (Learning from Experience)
+Learns without transition probabilities using $\epsilon$-greedy exploration.
+- **GLIE Monte Carlo Control**: Learns from complete episodes. Unbiased but high variance.
+- **SARSA (One-Step TD)**: Learns step-by-step. Bootstraps value estimates.
+- **SARSA(λ) with Eligibility Traces**: Bridges MC and One-Step TD using eligibility traces to propagate rewards backward.
 
-### Value Iteration
-1. Initialize V(s) = 0 for all states
-2. Update V(s) = max_a [R(s,a) + γ * Σ P(s'|s,a) * V(s')]
-3. Repeat until values converge
-4. Extract optimal policy from final values
-
-## Key Results
-
-| Algorithm | Iterations to Converge | V(initial state) |
-|-----------|----------------------|------------------|
-| Policy Iteration | 4-5 | ~7.0 |
-| Value Iteration | 15-20 | ~7.0 |
+*All 3 model-free algorithms successfully converged to policies achieving 100% accuracy across all 8 diseases after 50,000+ episodes of training.*
 
 ## Visualization Dashboard
 
-I built an interactive Streamlit dashboard with:
-- **32-State Grid**: Shows all possible knowledge states
-- **8 Disease Endpoints**: Visual representation of diagnosis targets
-- **Animated Paths**: Watch the AI traverse through states
-- **Two Modes**:
-  - Exploration: Random symptom order to cover all 32 states
-  - Optimal: Shows the efficient learned policy
+I built an interactive Streamlit dashboard with two tabs:
+- **Assignment 1:** Visualize the optimal policy via DP.
+- **Assignment 2:** Compare Q-value convergence, accuracy, and average reward for the 3 Model-Free algorithms.
 
-## How to Run
+Features include:
+- **32-State Grid**: Shows all logically possible knowledge paths
+- **Animated Paths**: Watch the AI traverse through states to reach a diagnosis
+- **Training Analytics**: Real-time convergence plot visualizations
+
+## How to Run Locally
 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Run training (optional)
+# Run Assignment 1 training (optional)
 python train.py
 
-# Launch the dashboard
+# Run Assignment 2 model-free training and generating plots (optional)
+python train_model_free.py
+
+# Launch the dashboard locally
 streamlit run app.py
 ```
 
@@ -97,24 +94,21 @@ streamlit run app.py
 
 ```
 RL_Project/
-├── src/
-│   ├── policy_iteration.py   # Policy Iteration implementation
-│   ├── value_iteration.py    # Value Iteration implementation
-│   └── __init__.py
 ├── app.py                    # Streamlit dashboard
-├── train.py                  # Training script
+├── train.py                  # DP Training script
+├── train_model_free.py       # Model-Free Training script
+├── presentation_assignment2.tex # LaTeX presentation for Assigment 2
 ├── requirements.txt          # Dependencies
+├── src/
+│   ├── policy_iteration.py   
+│   ├── value_iteration.py    
+│   ├── monte_carlo.py        # GLIE MC implementation
+│   ├── sarsa.py              # SARSA implementation
+│   ├── sarsa_lambda.py       # SARSA(λ) implementation
+│   └── __init__.py
+├── results/                  # Saved plots, Q-tables, and policies
 └── README.md
 ```
-
-## What I Learned
-
-Through this project, I understood:
-- How to model real-world problems as MDPs
-- The importance of state representation (243-state vs 32-state)
-- How information gathering has value in decision making
-- The trade-off between asking more questions vs immediate diagnosis
-- Practical implementation of dynamic programming algorithms
 
 ## Author
 
