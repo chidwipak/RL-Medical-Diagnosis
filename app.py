@@ -490,21 +490,56 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
+    # ===== SIDEBAR =====
+    with st.sidebar:
+        st.header("⚙️ Assignment 1 Settings")
+        dp_mode = st.radio("Mode", ["🔍 Exploration (All States)", "🎯 Optimal Policy"], key="dp_mode")
+        dp_algo_choice = st.radio("Algorithm", ["Policy Iteration", "Value Iteration"], key="dp_algo")
+        dp_speed = st.slider("Speed", 0.5, 3.0, 1.5, 0.5, key="dp_speed")
+
+        st.markdown("---")
+        st.header("⚙️ Assignment 2 Settings")
+        mf_mode = st.radio("Mode", ["🔍 Exploration (ε-Greedy)", "🎯 Learned Policy"], key="mf_mode")
+        mf_algo_choice = st.radio("Algorithm",
+                                   ["GLIE Monte Carlo", "SARSA", "SARSA(λ)"],
+                                   key="mf_algo")
+        mf_speed = st.slider("Speed", 0.5, 3.0, 1.5, 0.5, key="mf_speed")
+
+        st.markdown("---")
+        st.header("📖 Assignment 2 Algorithm Info")
+        if mf_algo_choice == "GLIE Monte Carlo":
+            st.markdown("""
+            **GLIE Monte Carlo Control**
+            - Learns Q(s,a) from **complete episodes**
+            - First-visit MC with incremental mean
+            - ε decays → greedy in the limit
+            - Update: Q(s,a) += (1/N)(G - Q(s,a))
+            """)
+        elif mf_algo_choice == "SARSA":
+            st.markdown("""
+            **SARSA (One-Step TD)**
+            - Learns Q(s,a) from **each step**
+            - On-policy: follows ε-greedy, learns ε-greedy
+            - Update: Q(s,a) += α[r + γQ(s',a') - Q(s,a)]
+            """)
+        else:
+            st.markdown("""
+            **SARSA(λ) - Eligibility Traces**
+            - Multi-step TD: bridges MC and One-Step TD
+            - Eligibility trace: E(s,a) tracks recent visits
+            - TD error propagated to ALL recent (s,a) pairs
+            - λ=0 → SARSA, λ=1 → Monte Carlo
+            """)
+
+        st.markdown("---")
+        st.header("🦠 Diseases")
+        disease_table_sidebar()
+
     tab1, tab2 = st.tabs(["📊 Assignment 1: Dynamic Programming", "🧠 Assignment 2: Model-Free"])
 
     # ===== ASSIGNMENT 1 TAB =====
     with tab1:
         dp_algorithms = get_dp_algorithms()
-
-        with st.sidebar:
-            st.header("⚙️ Assignment 1 Settings")
-            dp_mode = st.radio("Mode", ["🔍 Exploration (All States)", "🎯 Optimal Policy"], key="dp_mode")
-            dp_algo_choice = st.radio("Algorithm", ["Policy Iteration", "Value Iteration"], key="dp_algo")
-            dp_speed = st.slider("Speed", 0.5, 3.0, 1.5, 0.5, key="dp_speed")
-
-            st.markdown("---")
-            st.header("🦠 Diseases")
-            disease_table_sidebar()
 
         st.markdown("## 1️⃣ Patient Symptoms")
         symptoms = get_symptom_inputs("dp_")
@@ -534,40 +569,6 @@ def main():
         # Load algorithms (cached)
         with st.spinner("Training model-free algorithms (first load only)..."):
             mf_algorithms = get_model_free_algorithms()
-
-        with st.sidebar:
-            st.header("⚙️ Assignment 2 Settings")
-            mf_mode = st.radio("Mode", ["🔍 Exploration (ε-Greedy)", "🎯 Learned Policy"], key="mf_mode")
-            mf_algo_choice = st.radio("Algorithm",
-                                       ["GLIE Monte Carlo", "SARSA", "SARSA(λ)"],
-                                       key="mf_algo")
-            mf_speed = st.slider("Speed", 0.5, 3.0, 1.5, 0.5, key="mf_speed")
-
-            st.markdown("---")
-            st.header("📖 Algorithm Info")
-            if mf_algo_choice == "GLIE Monte Carlo":
-                st.markdown("""
-                **GLIE Monte Carlo Control**
-                - Learns Q(s,a) from **complete episodes**
-                - First-visit MC with incremental mean
-                - ε decays → greedy in the limit
-                - Update: Q(s,a) += (1/N)(G - Q(s,a))
-                """)
-            elif mf_algo_choice == "SARSA":
-                st.markdown("""
-                **SARSA (One-Step TD)**
-                - Learns Q(s,a) from **each step**
-                - On-policy: follows ε-greedy, learns ε-greedy
-                - Update: Q(s,a) += α[r + γQ(s',a') - Q(s,a)]
-                """)
-            else:
-                st.markdown("""
-                **SARSA(λ) - Eligibility Traces**
-                - Multi-step TD: bridges MC and One-Step TD
-                - Eligibility trace: E(s,a) tracks recent visits
-                - TD error propagated to ALL recent (s,a) pairs
-                - λ=0 → SARSA, λ=1 → Monte Carlo
-                """)
 
         # ===== DIAGNOSIS SIMULATION =====
         st.markdown("## 1️⃣ Patient Symptoms")
