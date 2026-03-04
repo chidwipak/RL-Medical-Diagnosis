@@ -132,7 +132,7 @@
     \textbf{Solution: $\epsilon$-Greedy Policy}
     \begin{itemize}
         \item With probability $\epsilon$: pick a \textbf{random} action (explore)
-        \item With probability $1+\epsilon$: pick the \textbf{best} action (exploit)
+        \item With probability $1-\epsilon$: pick the \textbf{best} action (exploit)
     \end{itemize}
 
     \vspace{0.3cm}
@@ -175,14 +175,14 @@
 % =============================================================
 \section{Temporal Difference Methods}
 
-\begin{frame}{TD(0) Prediction — Learning V(s) Step by Step}
+\begin{frame}{One-Step TD (TD(0)) Prediction --- Learning V(s) Step by Step}
     \begin{block}{Idea}
-        Update $V(s)$ after \textbf{every step}, using the estimated value of the next state.
+        Update $V(s)$ after \textbf{every single step}, using the estimated value of the next state. This is called \textbf{One-Step TD} or equivalently \textbf{TD(0)} because it looks only 1 step ahead.
     \end{block}
 
     \vspace{0.3cm}
 
-    \textbf{TD(0) Update Rule:}
+    \textbf{One-Step TD Update Rule:}
     \[V(s) \leftarrow V(s) + \alpha \underbrace{[r + \gamma V(s') - V(s)]}_{\text{TD Error } \delta}\]
 
     \vspace{0.3cm}
@@ -196,12 +196,33 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{TD($\lambda$) and Eligibility Traces}
-    \begin{block}{Idea}
-        Bridges between MC ($\lambda=1$) and TD(0) ($\lambda=0$). Uses eligibility traces to assign credit to recently visited states.
+\begin{frame}{TD($\lambda$) --- Forward View: $\lambda$-Return}
+    \begin{block}{Key Idea}
+        TD($\lambda$) computes a \textbf{weighted average} of all $n$-step returns, from 1-step TD all the way to Monte Carlo.
     \end{block}
 
-    \vspace{0.3cm}
+    \vspace{0.2cm}
+
+    \textbf{$n$-step Return:} Look $n$ steps ahead:
+    \[G_t^{(n)} = r_{t+1} + \gamma r_{t+2} + \dots + \gamma^{n-1} r_{t+n} + \gamma^n V(s_{t+n})\]
+
+    \textbf{$\lambda$-Return:} Weighted average of \textbf{all} $n$-step returns:
+    \[G_t^\lambda = (1-\lambda) \sum_{n=1}^{\infty} \lambda^{n-1} G_t^{(n)}\]
+
+    \textbf{The weights $(1-\lambda)\lambda^{n-1}$} form a geometric distribution that sums to 1:
+    \begin{itemize}
+        \item 1-step gets weight $(1-\lambda)$ \hfill (highest)
+        \item 2-step gets weight $(1-\lambda)\lambda$
+        \item $n$-step gets weight $(1-\lambda)\lambda^{n-1}$ \hfill (decays geometrically)
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{TD($\lambda$) --- Backward View: Eligibility Traces}
+    \begin{block}{Equivalent Implementation}
+        Instead of computing the $\lambda$-return (forward view), we use \textbf{eligibility traces} (backward view) which is computationally efficient and gives the same result.
+    \end{block}
+
+    \vspace{0.2cm}
 
     \textbf{Eligibility Trace:} $E(s)$ tracks how ``recently'' state $s$ was visited.
 
@@ -215,12 +236,12 @@
         \item Decay traces: $E(s) \leftarrow \gamma \lambda E(s)$
     \end{enumerate}
 
-    \vspace{0.3cm}
+    \vspace{0.2cm}
 
     \textbf{$\lambda$ controls the trade-off:}
     \begin{itemize}
-        \item $\lambda = 0$: Only update current state (TD(0))
-        \item $\lambda = 1$: Propagate to all visited states (like MC)
+        \item $\lambda = 0$: Only 1-step return $\rightarrow$ same as One-Step TD
+        \item $\lambda = 1$: Full return $\rightarrow$ same as Monte Carlo
         \item $\lambda = 0.8$: Good balance (what we use)
     \end{itemize}
 \end{frame}
@@ -251,7 +272,7 @@
     \textbf{Three Methods for Action-Value Learning:}
     \begin{enumerate}
         \item MC for Q(s,a) → \textbf{GLIE Monte Carlo Control}
-        \item TD(0) for Q(s,a) → \textbf{SARSA}
+        \item One-Step TD for Q(s,a) \textrightarrow\ \textbf{SARSA}
         \item TD($\lambda$) for Q(s,a) → \textbf{SARSA($\lambda$)}
     \end{enumerate}
 \end{frame}
@@ -316,7 +337,7 @@
 
 \begin{frame}{SARSA — Algorithm}
     \begin{block}{How It Works}
-        Update Q(s,a) after \textbf{every step} using one-step TD.
+        Update Q(s,a) after \textbf{every step} using One-Step TD.
         Name: \textbf{S}tate-\textbf{A}ction-\textbf{R}eward-\textbf{S}tate-\textbf{A}ction.
     \end{block}
 

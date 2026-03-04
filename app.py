@@ -555,7 +555,7 @@ def main():
                 """)
             elif mf_algo_choice == "SARSA":
                 st.markdown("""
-                **SARSA (TD(0))**
+                **SARSA (One-Step TD)**
                 - Learns Q(s,a) from **each step**
                 - On-policy: follows ε-greedy, learns ε-greedy
                 - Update: Q(s,a) += α[r + γQ(s',a') - Q(s,a)]
@@ -563,7 +563,7 @@ def main():
             else:
                 st.markdown("""
                 **SARSA(λ) - Eligibility Traces**
-                - Multi-step TD: bridges MC and TD(0)
+                - Multi-step TD: bridges MC and One-Step TD
                 - Eligibility trace: E(s,a) tracks recent visits
                 - TD error propagated to ALL recent (s,a) pairs
                 - λ=0 → SARSA, λ=1 → Monte Carlo
