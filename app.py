@@ -537,7 +537,7 @@ def main():
 
         with st.sidebar:
             st.header("⚙️ Assignment 2 Settings")
-            mf_mode = st.radio("Mode", ["🔍 Exploration (All States)", "🎯 Optimal Policy"], key="mf_mode")
+            mf_mode = st.radio("Mode", ["🔍 Exploration (ε-Greedy)", "🎯 Learned Policy"], key="mf_mode")
             mf_algo_choice = st.radio("Algorithm",
                                        ["GLIE Monte Carlo", "SARSA", "SARSA(λ)"],
                                        key="mf_algo")
