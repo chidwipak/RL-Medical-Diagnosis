@@ -10,4 +10,5 @@ build/
 .venv/
 venv/
 *.log
-presentation.tex
+*.pdf
+*.tex

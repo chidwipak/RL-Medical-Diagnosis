@@ -2,6 +2,7 @@
 RL Medical Diagnosis - Complete Dashboard
 Assignment 1 (DP): Policy Iteration & Value Iteration
 Assignment 2 (Model-Free): GLIE Monte Carlo, SARSA, SARSA(λ)
+Assignment 3 (FA & PG): MC-FA, SARSA-FA, LSPI, REINFORCE, Actor-Critic
 
 Tab-based layout with 32-state grid visualization for all algorithms.
 """
@@ -21,6 +22,11 @@ from src.value_iteration import ValueIteration
 from src.monte_carlo import GLIEMonteCarlo
 from src.sarsa import SARSA
 from src.sarsa_lambda import SARSALambda
+from src.mc_fa import MCFunctionApprox
+from src.sarsa_fa import SARSAFunctionApprox
+from src.lspi import LSPI
+from src.reinforce import REINFORCE
+from src.actor_critic import ActorCritic
 
 st.set_page_config(page_title="AI Doctor - RL Medical Diagnosis", page_icon="🩺", layout="wide")
 
@@ -55,7 +61,6 @@ SYMPTOM_EMOJIS = ["🌡️", "🤧", "😴", "😮‍💨", "🤕"]
 
 @st.cache_resource
 def get_dp_algorithms():
-    """Load Assignment 1 DP algorithms."""
     pi = PolicyIteration(gamma=0.9, theta=1e-6)
     pi_results = pi.run(verbose=False)
     vi = ValueIteration(gamma=0.9, theta=1e-6)
@@ -65,25 +70,47 @@ def get_dp_algorithms():
         'Value Iteration': {'algo': vi, 'results': vi_results}
     }
 
-
 @st.cache_resource
 def get_model_free_algorithms():
-    """Train Assignment 2 model-free algorithms."""
     n_episodes = 50000
-
     mc = GLIEMonteCarlo(gamma=0.9, epsilon_decay=500.0)
     mc_results = mc.run(n_episodes=n_episodes, verbose=False)
-
     sarsa = SARSA(gamma=0.9, alpha=0.1, epsilon_decay=500.0)
     sarsa_results = sarsa.run(n_episodes=n_episodes, verbose=False)
-
     sarsa_l = SARSALambda(gamma=0.9, lambda_=0.8, alpha=0.1, epsilon_decay=500.0)
     sarsa_l_results = sarsa_l.run(n_episodes=n_episodes, verbose=False)
-
     return {
         'GLIE Monte Carlo': {'algo': mc, 'results': mc_results},
         'SARSA': {'algo': sarsa, 'results': sarsa_results},
         'SARSA(λ)': {'algo': sarsa_l, 'results': sarsa_l_results},
+    }
+
+@st.cache_resource
+def get_fa_pg_algorithms():
+    """Train Assignment 3 FA & Policy Gradient algorithms."""
+    n_episodes = 50000
+
+    mc_fa = MCFunctionApprox(gamma=0.9, alpha=0.01, epsilon_decay=500.0)
+    mc_fa_results = mc_fa.run(n_episodes=n_episodes, verbose=False)
+
+    sarsa_fa = SARSAFunctionApprox(gamma=0.9, alpha=0.01, epsilon_decay=500.0)
+    sarsa_fa_results = sarsa_fa.run(n_episodes=n_episodes, verbose=False)
+
+    lspi = LSPI(gamma=0.9, epsilon=0.1)
+    lspi_results = lspi.run(n_sample_episodes=10000, max_iterations=20, verbose=False)
+
+    reinforce = REINFORCE(gamma=0.9, alpha=0.005)
+    reinforce_results = reinforce.run(n_episodes=n_episodes, verbose=False)
+
+    ac = ActorCritic(gamma=0.9, alpha_actor=0.005, alpha_critic=0.01)
+    ac_results = ac.run(n_episodes=n_episodes, verbose=False)
+
+    return {
+        'MC with FA': {'algo': mc_fa, 'results': mc_fa_results},
+        'SARSA with FA': {'algo': sarsa_fa, 'results': sarsa_fa_results},
+        'LSPI': {'algo': lspi, 'results': lspi_results},
+        'REINFORCE': {'algo': reinforce, 'results': reinforce_results},
+        'Actor-Critic': {'algo': ac, 'results': ac_results},
     }
 
 
@@ -99,7 +126,6 @@ def find_matching_disease(symptoms):
 
 
 def create_state_grid(path_bits, diagnosed_disease=None, all_visited=None):
-    """Create 32-state grid with path visualization."""
     fig = go.Figure()
 
     for row in range(8):
@@ -130,7 +156,6 @@ def create_state_grid(path_bits, diagnosed_disease=None, all_visited=None):
                 showarrow=False, font=dict(size=10, color=text_color)
             )
 
-    # Disease rows
     for col in range(min(4, 8)):
         color = '#FFD700' if diagnosed_disease == col else DISEASE_COLORS[col]
         fig.add_shape(
@@ -155,7 +180,6 @@ def create_state_grid(path_bits, diagnosed_disease=None, all_visited=None):
             showarrow=False, font=dict(size=9, color='white')
         )
 
-    # Draw path arrow
     if path_bits:
         path_x, path_y = [], []
         for state in path_bits:
@@ -189,7 +213,6 @@ def create_state_grid(path_bits, diagnosed_disease=None, all_visited=None):
 
 
 def get_symptom_inputs(key_prefix=""):
-    """Shared symptom input UI."""
     cols = st.columns(5)
     symptoms = []
     for i, (name, emoji) in enumerate(zip(SYMPTOM_NAMES, SYMPTOM_EMOJIS)):
@@ -200,7 +223,6 @@ def get_symptom_inputs(key_prefix=""):
 
 
 def run_exploration(patient_symptoms, placeholder, speed=1.0):
-    """Exploration mode: random symptom order."""
     disease_id, _ = find_matching_disease(patient_symptoms)
     symptom_order = list(range(5))
     random.shuffle(symptom_order)
@@ -236,7 +258,6 @@ def run_exploration(patient_symptoms, placeholder, speed=1.0):
 
 
 def run_optimal(algo, patient_symptoms, placeholder, speed=1.0, algo_name="Algorithm"):
-    """Optimal mode: use learned policy."""
     disease_id, _ = find_matching_disease(patient_symptoms)
 
     state = 0
@@ -283,7 +304,6 @@ def run_optimal(algo, patient_symptoms, placeholder, speed=1.0, algo_name="Algor
 
 
 def show_result(result):
-    """Display diagnosis result."""
     st.markdown("---")
     col1, col2 = st.columns(2)
 
@@ -307,7 +327,6 @@ def show_result(result):
 
 
 def disease_table_sidebar():
-    """Show disease table in sidebar."""
     st.markdown("""
 | Disease | Symptoms |
 |---------|----------|
@@ -326,25 +345,26 @@ def disease_table_sidebar():
 
 # ===== CONVERGENCE & Q-VALUE PLOTS =====
 
-def plot_convergence_plotly(results_dict):
-    """Plot convergence curves for model-free algorithms."""
+def plot_convergence_plotly(results_dict, colors_map=None):
     fig = go.Figure()
-    colors = {'GLIE Monte Carlo': '#3498db', 'SARSA': '#e74c3c', 'SARSA(λ)': '#2ecc71'}
+    if colors_map is None:
+        colors_map = {}
 
     for name, res in results_dict.items():
         history = res['results']['history']
-        episodes = [h['episode'] for h in history]
-        q_vals = [h['Q_s0_max'] for h in history]
-        fig.add_trace(go.Scatter(
-            x=episodes, y=q_vals,
-            mode='lines+markers',
-            name=name,
-            line=dict(color=colors.get(name, '#666'), width=3),
-            marker=dict(size=8)
-        ))
+        if history:
+            episodes = [h['episode'] for h in history]
+            q_vals = [h['Q_s0_max'] for h in history]
+            fig.add_trace(go.Scatter(
+                x=episodes, y=q_vals,
+                mode='lines+markers',
+                name=name,
+                line=dict(color=colors_map.get(name, '#666'), width=3),
+                marker=dict(size=8)
+            ))
 
     fig.update_layout(
-        title="Q-Value Convergence: Q(s=0, best action)",
+        title="Q-Value / Score Convergence",
         xaxis_title="Episode",
         yaxis_title="Q(s=0, best)",
         height=400,
@@ -353,24 +373,23 @@ def plot_convergence_plotly(results_dict):
     return fig
 
 
-def plot_reward_convergence_plotly(results_dict):
-    """Plot episode reward convergence."""
+def plot_reward_convergence_plotly(results_dict, colors_map=None):
     fig = go.Figure()
-    colors = {'GLIE Monte Carlo': '#3498db', 'SARSA': '#e74c3c', 'SARSA(λ)': '#2ecc71'}
+    if colors_map is None:
+        colors_map = {}
 
     window = 1000
     for name, res in results_dict.items():
-        rewards = res['results']['total_rewards']
+        rewards = res['results'].get('total_rewards', [])
         if len(rewards) >= window:
             smoothed = np.convolve(rewards, np.ones(window)/window, mode='valid')
             x_vals = list(range(window-1, len(rewards)))
-            # Downsample for performance
             step = max(1, len(smoothed) // 500)
             fig.add_trace(go.Scatter(
                 x=x_vals[::step], y=smoothed[::step],
                 mode='lines',
                 name=name,
-                line=dict(color=colors.get(name, '#666'), width=2)
+                line=dict(color=colors_map.get(name, '#666'), width=2)
             ))
 
     fig.update_layout(
@@ -384,7 +403,6 @@ def plot_reward_convergence_plotly(results_dict):
 
 
 def _simulate_dp_episode(algo, patient_symptoms):
-    """Simulate episode for DP algorithms that lack simulate_episode method."""
     best_disease = 0
     best_match = -1
     for d in range(8):
@@ -407,7 +425,6 @@ def _simulate_dp_episode(algo, patient_symptoms):
 
 
 def plot_accuracy_comparison(algos_dict):
-    """Plot accuracy bar chart."""
     names = []
     accuracies = []
 
@@ -427,7 +444,9 @@ def plot_accuracy_comparison(algos_dict):
 
     colors_map = {
         'GLIE Monte Carlo': '#3498db', 'SARSA': '#e74c3c', 'SARSA(λ)': '#2ecc71',
-        'Policy Iteration': '#9b59b6', 'Value Iteration': '#f39c12'
+        'Policy Iteration': '#9b59b6', 'Value Iteration': '#f39c12',
+        'MC with FA': '#1a5276', 'SARSA with FA': '#c0392b', 'LSPI': '#27ae60',
+        'REINFORCE': '#8e44ad', 'Actor-Critic': '#d35400'
     }
     bar_colors = [colors_map.get(n, '#666') for n in names]
 
@@ -442,21 +461,25 @@ def plot_accuracy_comparison(algos_dict):
         yaxis_title="Accuracy (%)",
         yaxis=dict(range=[0, 110]),
         height=400,
-        template="plotly_white"
+        template="plotly_white",
+        xaxis_tickangle=-30
     )
     return fig
 
 
 def plot_q_heatmap(algo, algo_name):
-    """Plot Q-value heatmap for initial states."""
-    # Show Q-values for key states
     key_states = [0, 1, 2, 3, 4, 8, 16]
     action_labels = [algo.get_action_name(a) for a in range(13)]
 
     z_data = []
     y_labels = []
     for s in key_states:
-        z_data.append([algo.Q[s, a] for a in range(13)])
+        if hasattr(algo, 'Q'):
+            z_data.append([algo.Q[s, a] for a in range(13)])
+        elif hasattr(algo, 'q_hat'):
+            z_data.append([algo.q_hat(s, a) for a in range(13)])
+        else:
+            z_data.append([0.0 for a in range(13)])
         statuses = algo.state_to_symptom_status(s)
         known = [SYMPTOM_NAMES[i][0] for i in range(5) if statuses[i] != 0]
         y_labels.append(f"s{s} ({','.join(known) if known else '∅'})")
@@ -486,7 +509,7 @@ def main():
     st.markdown("""
     <div class="main-header">
         <h1>🩺 AI Doctor - RL Medical Diagnosis</h1>
-        <p>Dynamic Programming & Model-Free Reinforcement Learning</p>
+        <p>Dynamic Programming · Model-Free RL · Function Approximation · Policy Gradient</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -506,36 +529,22 @@ def main():
         mf_speed = st.slider("Speed", 0.5, 3.0, 1.5, 0.5, key="mf_speed")
 
         st.markdown("---")
-        st.header("📖 Assignment 2 Algorithm Info")
-        if mf_algo_choice == "GLIE Monte Carlo":
-            st.markdown("""
-            **GLIE Monte Carlo Control**
-            - Learns Q(s,a) from **complete episodes**
-            - First-visit MC with incremental mean
-            - ε decays → greedy in the limit
-            - Update: Q(s,a) += (1/N)(G - Q(s,a))
-            """)
-        elif mf_algo_choice == "SARSA":
-            st.markdown("""
-            **SARSA (One-Step TD)**
-            - Learns Q(s,a) from **each step**
-            - On-policy: follows ε-greedy, learns ε-greedy
-            - Update: Q(s,a) += α[r + γQ(s',a') - Q(s,a)]
-            """)
-        else:
-            st.markdown("""
-            **SARSA(λ) - Eligibility Traces**
-            - Multi-step TD: bridges MC and One-Step TD
-            - Eligibility trace: E(s,a) tracks recent visits
-            - TD error propagated to ALL recent (s,a) pairs
-            - λ=0 → SARSA, λ=1 → Monte Carlo
-            """)
+        st.header("⚙️ Assignment 3 Settings")
+        fa_mode = st.radio("Mode", ["🔍 Exploration", "🎯 Learned Policy"], key="fa_mode")
+        fa_algo_choice = st.radio("Algorithm",
+                                   ["MC with FA", "SARSA with FA", "LSPI", "REINFORCE", "Actor-Critic"],
+                                   key="fa_algo")
+        fa_speed = st.slider("Speed", 0.5, 3.0, 1.5, 0.5, key="fa_speed")
 
         st.markdown("---")
         st.header("🦠 Diseases")
         disease_table_sidebar()
 
-    tab1, tab2 = st.tabs(["📊 Assignment 1: Dynamic Programming", "🧠 Assignment 2: Model-Free"])
+    tab1, tab2, tab3 = st.tabs([
+        "📊 Assignment 1: Dynamic Programming",
+        "🧠 Assignment 2: Model-Free",
+        "📐 Assignment 3: FA & Policy Gradient"
+    ])
 
     # ===== ASSIGNMENT 1 TAB =====
     with tab1:
@@ -566,11 +575,9 @@ def main():
         </div>
         """, unsafe_allow_html=True)
 
-        # Load algorithms (cached)
         with st.spinner("Training model-free algorithms (first load only)..."):
             mf_algorithms = get_model_free_algorithms()
 
-        # ===== DIAGNOSIS SIMULATION =====
         st.markdown("## 1️⃣ Patient Symptoms")
         symptoms = get_symptom_inputs("mf_")
 
@@ -587,9 +594,10 @@ def main():
                 result = run_optimal(algo, symptoms, placeholder, mf_speed, mf_algo_choice)
             show_result(result)
 
-        # ===== TRAINING ANALYTICS =====
         st.markdown("---")
         st.markdown("## 📈 Training Analytics")
+
+        mf_colors = {'GLIE Monte Carlo': '#3498db', 'SARSA': '#e74c3c', 'SARSA(λ)': '#2ecc71'}
 
         anal_tab1, anal_tab2, anal_tab3, anal_tab4 = st.tabs([
             "📉 Convergence", "🏆 Accuracy", "🗺️ Q-Values", "📊 Summary"
@@ -598,14 +606,13 @@ def main():
         with anal_tab1:
             col1, col2 = st.columns(2)
             with col1:
-                fig = plot_convergence_plotly(mf_algorithms)
+                fig = plot_convergence_plotly(mf_algorithms, mf_colors)
                 st.plotly_chart(fig, use_container_width=True)
             with col2:
-                fig = plot_reward_convergence_plotly(mf_algorithms)
+                fig = plot_reward_convergence_plotly(mf_algorithms, mf_colors)
                 st.plotly_chart(fig, use_container_width=True)
 
         with anal_tab2:
-            # Compare all 5 algorithms
             all_algos = {}
             dp_algos = get_dp_algorithms()
             for name, data in dp_algos.items():
@@ -623,7 +630,6 @@ def main():
 
         with anal_tab4:
             st.markdown("### 📊 Algorithm Comparison")
-
             summary_data = []
             for name, data in mf_algorithms.items():
                 algo = data['algo']
@@ -639,27 +645,127 @@ def main():
                 })
             st.table(summary_data)
 
+    # ===== ASSIGNMENT 3 TAB =====
+    with tab3:
+        st.markdown("""
+        <div class="algo-card">
+            <h3>📐 Function Approximation & Policy Gradient</h3>
+            <p><b>FA algorithms</b> use feature vectors φ(s,a) instead of Q-tables — enabling generalization across states.<br>
+            <b>Policy Gradient</b> algorithms directly learn the policy π_θ(a|s) instead of Q-values.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.spinner("Training FA & Policy Gradient algorithms (first load only)..."):
+            fa_algorithms = get_fa_pg_algorithms()
+
+        st.markdown("## 1️⃣ Patient Symptoms")
+        symptoms = get_symptom_inputs("fa_")
+
+        disease_id, score = find_matching_disease(symptoms)
+        st.info(f"💡 Best match: **{DISEASE_NAMES[disease_id]}** ({score}/5)")
+        st.markdown("---")
+
+        if st.button("🚀 Start Diagnosis", use_container_width=True, key="fa_start"):
+            placeholder = st.empty()
+            if "Exploration" in fa_mode:
+                result = run_exploration(symptoms, placeholder, fa_speed)
+            else:
+                algo = fa_algorithms[fa_algo_choice]['algo']
+                result = run_optimal(algo, symptoms, placeholder, fa_speed, fa_algo_choice)
+            show_result(result)
+
+        # ===== TRAINING ANALYTICS =====
+        st.markdown("---")
+        st.markdown("## 📈 Training Analytics")
+
+        fa_colors = {
+            'MC with FA': '#1a5276', 'SARSA with FA': '#c0392b', 'LSPI': '#27ae60',
+            'REINFORCE': '#8e44ad', 'Actor-Critic': '#d35400'
+        }
+
+        a3_tab1, a3_tab2, a3_tab3, a3_tab4 = st.tabs([
+            "📉 Convergence", "🏆 Accuracy", "🗺️ Q-Values", "📊 Summary"
+        ])
+
+        with a3_tab1:
+            col1, col2 = st.columns(2)
+            with col1:
+                fig = plot_convergence_plotly(fa_algorithms, fa_colors)
+                st.plotly_chart(fig, use_container_width=True)
+            with col2:
+                fig = plot_reward_convergence_plotly(fa_algorithms, fa_colors)
+                st.plotly_chart(fig, use_container_width=True)
+
+        with a3_tab2:
+            # Compare ALL algorithms across all assignments
+            all_algos = {}
+            for name, data in get_dp_algorithms().items():
+                all_algos[name] = data
+            for name, data in get_model_free_algorithms().items():
+                all_algos[name] = data
+            for name, data in fa_algorithms.items():
+                all_algos[name] = data
+            fig = plot_accuracy_comparison(all_algos)
+            st.plotly_chart(fig, use_container_width=True)
+
+        with a3_tab3:
+            selected_algo = st.selectbox("Select Algorithm", list(fa_algorithms.keys()), key="fa_q_select")
+            algo = fa_algorithms[selected_algo]['algo']
+            fig = plot_q_heatmap(algo, selected_algo)
+            st.plotly_chart(fig, use_container_width=True)
+
+        with a3_tab4:
+            st.markdown("### 📊 Algorithm Comparison")
+
+            summary_data = []
+            for name, data in fa_algorithms.items():
+                algo = data['algo']
+                results = data['results']
+                correct = sum(1 for d in range(8)
+                              if algo.simulate_episode(list(algo.DISEASE_PATTERNS[d]))['success'])
+
+                algo_type = "Policy Gradient" if name in ["REINFORCE", "Actor-Critic"] else "Function Approx"
+                summary_data.append({
+                    'Algorithm': name,
+                    'Type': algo_type,
+                    'Time (s)': f"{results['elapsed_time']:.2f}",
+                    'Accuracy': f"{correct}/8 ({100*correct/8:.0f}%)",
+                })
+            st.table(summary_data)
+
             st.markdown("""
             ### 🔑 Key Differences
 
-            | Feature | GLIE MC | SARSA | SARSA(λ) |
-            |---------|---------|-------|----------|
-            | Update timing | End of episode | Every step | Every step |
-            | Bootstrapping | No | Yes (1-step) | Yes (multi-step) |
-            | Eligibility traces | No | No | Yes |
-            | Bias | Unbiased | Some bias | Adjustable (λ) |
-            | Variance | High | Low | Medium |
-            | Convergence speed | Slow | Medium | Fast |
+            | Feature | MC-FA | SARSA-FA | LSPI | REINFORCE | Actor-Critic |
+            |---------|-------|----------|------|-----------|--------------|
+            | Approach | Value-based | Value-based | Value-based | Policy-based | Both |
+            | FA Type | Linear q̂ | Linear q̂ | Linear q̂ | Softmax π_θ | Softmax + Linear V̂ |
+            | Update | End of episode | Every step | Batch | End of episode | Every step |
+            | Method | MC + SGD | TD + semi-gradient | Least squares | Policy gradient | Actor + Critic |
             """)
 
             st.markdown("""
-            ### 💡 Why Not Greedy Policy?
+            ### 💡 Why Function Approximation?
 
-            In model-free methods, we **cannot** use a purely greedy policy like in Policy Iteration because:
-            1. We don't have transition probabilities to evaluate other actions
-            2. We need **exploration** to discover the value of unvisited state-action pairs
-            3. **ε-greedy** balances exploration (random) with exploitation (best known action)
-            4. **GLIE** ensures ε → 0, so the policy converges to optimal
+            In Assignment 2, we stored Q-values in a **table** (244 × 13 = 3,172 entries).
+            With FA, we use a **weight vector** of only **31 parameters** — a 100× reduction!
+
+            This matters because:
+            1. **Generalization**: Similar states share information through features
+            2. **Scalability**: Works for much larger state spaces
+            3. **Memory efficient**: Store weights, not entire Q-table
+            """)
+
+            st.markdown("""
+            ### 💡 Why Policy Gradient?
+
+            Value-based methods learn Q(s,a) and derive policy. Policy gradient methods
+            **directly** optimize the policy — no need for Q-values!
+
+            Advantages:
+            1. **Stochastic policies**: Can learn mixed strategies
+            2. **Continuous actions**: Naturally handles continuous action spaces
+            3. **Convergence**: Guaranteed convergence to at least a local optimum
             """)
 
 
