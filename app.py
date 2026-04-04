@@ -258,7 +258,27 @@ def run_exploration(patient_symptoms, placeholder, speed=1.0):
 
 
 def run_optimal(algo, patient_symptoms, placeholder, speed=1.0, algo_name="Algorithm"):
-    disease_id, _ = find_matching_disease(patient_symptoms)
+    # Determine the TRUE disease: find exact match first, then best match
+    # The patient's full symptom vector (all 5 values) defines their disease
+    true_disease = None
+    best_match_score = -1
+    best_match_diseases = []
+
+    for d in range(8):
+        score = sum(patient_symptoms[i] == algo.DISEASE_PATTERNS[d][i] for i in range(5))
+        if score > best_match_score:
+            best_match_score = score
+            best_match_diseases = [d]
+        elif score == best_match_score:
+            best_match_diseases.append(d)
+
+    # If there's an exact match (5/5), that's unambiguous
+    if best_match_score == 5:
+        true_disease = best_match_diseases[0]
+    else:
+        # Multiple diseases tie — let PI's diagnosis be correct if it picks
+        # ANY of the equally-matching diseases, since the symptoms are ambiguous
+        true_disease = best_match_diseases  # Store list for multi-match check
 
     state = 0
     path_bits = [0]
@@ -284,9 +304,14 @@ def run_optimal(algo, patient_symptoms, placeholder, speed=1.0, algo_name="Algor
 
         if action >= 5:
             diagnosed = action - 5
+            # Check success: if true_disease is a list (tie), accept any match
+            if isinstance(true_disease, list):
+                success = diagnosed in true_disease
+            else:
+                success = diagnosed == true_disease
             return {
                 'diagnosed': diagnosed,
-                'success': diagnosed == disease_id,
+                'success': success,
                 'path': path_bits,
                 'actions': actions,
                 'steps': step + 1
@@ -301,6 +326,7 @@ def run_optimal(algo, patient_symptoms, placeholder, speed=1.0, algo_name="Algor
         path_bits.append(new_bits)
 
     return {'success': False}
+
 
 
 def show_result(result):
