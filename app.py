@@ -85,25 +85,43 @@ def get_model_free_algorithms():
         'SARSA(λ)': {'algo': sarsa_l, 'results': sarsa_l_results},
     }
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def get_fa_pg_algorithms():
     """Train Assignment 3 FA & Policy Gradient algorithms."""
-    n_episodes = 50000
+    # We use reduced episodes for the live dashboard to avoid long frozen screens
+    n_fa = 20000
+    n_pg = 30000
 
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    status_text.text("Training MC with Function Approximation...")
     mc_fa = MCFunctionApprox(gamma=0.9, alpha=0.01, epsilon_decay=500.0)
-    mc_fa_results = mc_fa.run(n_episodes=n_episodes, verbose=False)
+    mc_fa_results = mc_fa.run(n_episodes=n_fa, verbose=False)
+    progress_bar.progress(20)
 
+    status_text.text("Training SARSA with Function Approximation...")
     sarsa_fa = SARSAFunctionApprox(gamma=0.9, alpha=0.01, epsilon_decay=500.0)
-    sarsa_fa_results = sarsa_fa.run(n_episodes=n_episodes, verbose=False)
+    sarsa_fa_results = sarsa_fa.run(n_episodes=n_fa, verbose=False)
+    progress_bar.progress(40)
 
+    status_text.text("Training Least Squares Policy Iteration (LSPI)...")
     lspi = LSPI(gamma=0.9, epsilon=0.1)
-    lspi_results = lspi.run(n_sample_episodes=10000, max_iterations=20, verbose=False)
+    lspi_results = lspi.run(n_sample_episodes=5000, max_iterations=10, verbose=False)
+    progress_bar.progress(60)
 
-    reinforce = REINFORCE(gamma=0.9, alpha=0.005)
-    reinforce_results = reinforce.run(n_episodes=n_episodes, verbose=False)
+    status_text.text("Training REINFORCE (Policy Gradient)...")
+    reinforce = REINFORCE(gamma=0.9, alpha=0.01)
+    reinforce_results = reinforce.run(n_episodes=n_pg, verbose=False)
+    progress_bar.progress(80)
 
+    status_text.text("Training Actor-Critic...")
     ac = ActorCritic(gamma=0.9, alpha_actor=0.005, alpha_critic=0.01)
-    ac_results = ac.run(n_episodes=n_episodes, verbose=False)
+    ac_results = ac.run(n_episodes=n_pg, verbose=False)
+    progress_bar.progress(100)
+    
+    status_text.empty()
+    progress_bar.empty()
 
     return {
         'MC with FA': {'algo': mc_fa, 'results': mc_fa_results},
