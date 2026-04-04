@@ -191,6 +191,45 @@ class ValueIteration:
             return f"Ask {self.SYMPTOM_NAMES[action]}"
         return f"Diagnose {self.DISEASE_NAMES[action - 5]}"
 
+    def simulate_episode(self, patient_symptoms, verbose=False):
+        """Simulate a diagnosis episode for given patient symptoms."""
+        best_disease = 0
+        best_match = -1
+        for d in range(8):
+            match = sum(patient_symptoms[i] == self.DISEASE_PATTERNS[d][i] for i in range(5))
+            if match > best_match:
+                best_match, best_disease = match, d
+
+        state = 0
+        path_bits = [0]
+        actions_taken = []
+
+        for step in range(10):
+            action = self.policy[state]
+            actions_taken.append(action)
+
+            if action >= 5:
+                diagnosed = action - 5
+                return {
+                    'true_disease': best_disease,
+                    'diagnosed': diagnosed,
+                    'success': diagnosed == best_disease,
+                    'path_bits': path_bits,
+                    'actions': actions_taken,
+                    'steps': step + 1
+                }
+
+            symptom_idx = action
+            symptom_val = patient_symptoms[symptom_idx]
+            statuses = self.state_to_symptom_status(state)
+            statuses[symptom_idx] = symptom_val + 1
+            state = self.symptom_status_to_state(statuses)
+
+            new_bits = sum((1 << i) if statuses[i] != 0 else 0 for i in range(5))
+            path_bits.append(new_bits)
+
+        return {'diagnosed': None, 'success': False, 'path_bits': path_bits, 'steps': 10}
+
 
 if __name__ == "__main__":
     vi = ValueIteration()
